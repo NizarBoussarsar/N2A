@@ -14,18 +14,30 @@ import android.widget.ListView;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    //ImageView image1, image2, image3, image4;
+    public static int[] images = {
+            R.drawable.image1,
+            R.drawable.image5,
+            R.drawable.image2,
+            R.drawable.image6,
+            R.drawable.image3,
+            R.drawable.image7,
+            R.drawable.image4,
+            R.drawable.image8,
+            R.drawable.image1,
+            R.drawable.image5,
+            R.drawable.image2,
+            R.drawable.image6,
+            R.drawable.image3,
+            R.drawable.image7,
+            R.drawable.image4,
+            R.drawable.image8
+    };
 
-    //ListView lv;
-    //Context context;
-
-    public static int[] images = {R.drawable.image1, R.drawable.image2, R.drawable.image3, R.drawable.image4};
-
-    //private SimpleCursorAdapter adapter;
     private SensorManager sensorManager;
     private Sensor acceleroMeter;
     private float old, init;
     private boolean first = true;
+
 
     ListView lv;
     int scrollHeight;
@@ -34,13 +46,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //context = this;
+
         lv = (ListView) findViewById(R.id.listView);
         lv.setAdapter(new CustomAdapter(this, images));
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         acceleroMeter = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, acceleroMeter, SensorManager.SENSOR_DELAY_UI);
+        sensorManager.registerListener(this, acceleroMeter, SensorManager.SENSOR_DELAY_NORMAL);
 
         scrollHeight = lv.getHeight();
     }
@@ -84,31 +96,48 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onSensorChanged(SensorEvent event) {
 
         float yDelta = event.values[1];
+        int firstVisiblePosition, threshold = 2;
 
         if (first) {
+            Log.w("first", "first");
             old = init = yDelta;
+            Log.w("init", String.valueOf(init));
             first = false;
         }
 
-        Log.w("init", String.valueOf(init));
+        firstVisiblePosition = lv.getFirstVisiblePosition();
+
+        Log.e("firstVisiblePosition", String.valueOf(firstVisiblePosition));
         Log.w("old", String.valueOf(old));
         Log.w("yDelta", String.valueOf(yDelta));
 
-        int threshold = 2;
+        /**
+         * Il y a encore un probléme avec le scroll; Il faut qu'on le voit ensemble.
+         * Essayez de lire le code et je suis là si vous avec besoin d'explications.
+         */
+
+        if (yDelta < old - threshold) {
+            Log.w("DOWN", "Detected change in pitch down...");
+            old = yDelta;
+            lv.smoothScrollToPosition(firstVisiblePosition + 4);
+        }
 
         if (yDelta > old + threshold) {
-            Log.d("UP", "Detected change in pitch up...");
+            Log.w("UP", "Detected change in pitch up...");
             old = yDelta;
-            //lv.smoothScrollBy(-scrollHeight, 0);
-        } else if (yDelta < old - threshold) {
-            Log.d("DOWN", "Detected change in pitch down...");
-            old = yDelta;
-            //+lv.smoothScrollBy(scrollHeight, 0);
-        } else if (yDelta < init + threshold && yDelta > init - threshold) {
-            Log.d("SAME", "No change...");
-        } else {
-            Log.d("ELSE", "ELSE...");
+            lv.smoothScrollToPosition(firstVisiblePosition - 4);
         }
+
+        if (yDelta < init + threshold && yDelta > init - threshold) {
+            Log.w("SAME", "No change...");
+            //lv.smoothScrollToPosition(lv.getCount());
+        }
+
+        /*
+        else {
+            Log.e("ERROR", "ERROR...");
+            lv.smoothScrollToPosition(0);
+        } */
 
     }
 
