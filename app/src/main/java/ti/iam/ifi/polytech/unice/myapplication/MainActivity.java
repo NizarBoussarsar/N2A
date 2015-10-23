@@ -33,28 +33,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             R.drawable.image8
     };
 
+    private ListView listView;
+
     private SensorManager sensorManager;
-    private Sensor acceleroMeter;
-    private float old, init;
-    private boolean first = true;
+    private Sensor sensor;
 
-
-    ListView lv;
-    int scrollHeight;
+    private int initScrollPos = 0;
+    private float initialY, yThreshold = 2;
+    private boolean isfirstRun = true, isReternedToOriginalPosition = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        lv = (ListView) findViewById(R.id.listView);
-        lv.setAdapter(new CustomAdapter(this, images));
+        listView = (ListView) findViewById(R.id.listView);
+        listView.setAdapter(new CustomAdapter(this, images));
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        acceleroMeter = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        sensorManager.registerListener(this, acceleroMeter, SensorManager.SENSOR_DELAY_NORMAL);
-
-        scrollHeight = lv.getHeight();
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -66,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
-        sensorManager.registerListener(this, acceleroMeter, SensorManager.SENSOR_DELAY_UI);
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
     }
 
 
@@ -94,50 +92,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        Sensor mySensor = event.sensor;
+        float difference, last_y = event.values[1];
+        long curTime = System.currentTimeMillis();
 
-        float yDelta = event.values[1];
-        int firstVisiblePosition, threshold = 2;
-
-        if (first) {
-            Log.w("first", "first");
-            old = init = yDelta;
-            Log.w("init", String.valueOf(init));
-            first = false;
+        if (isfirstRun) {
+            initialY = last_y;
+            isfirstRun = false;
         }
 
-        firstVisiblePosition = lv.getFirstVisiblePosition();
+        difference = Math.abs(initialY - last_y);
 
-        Log.e("firstVisiblePosition", String.valueOf(firstVisiblePosition));
-        Log.w("old", String.valueOf(old));
-        Log.w("yDelta", String.valueOf(yDelta));
+        Log.e("", "Initial position : " + initialY + ". Difference : " + difference);
 
-        /**
-         * Il y a encore un probléme avec le scroll; Il faut qu'on le voit ensemble.
-         * Essayez de lire le code et je suis là si vous avec besoin d'explications.
-         */
-
-        if (yDelta < old - threshold) {
-            Log.w("DOWN", "Detected change in pitch down...");
-            old = yDelta;
-            lv.smoothScrollToPosition(firstVisiblePosition + 4);
+        if (difference > yThreshold) {
+            if (isReternedToOriginalPosition) {
+                if (initialY - last_y > 0) {
+                    /**
+                     * @param direction Negative to check scrolling up, positive to check
+                     *            scrolling down.
+                     */
+                    if (listView.canScrollList(1)) {
+                        initScrollPos += 3;
+                        Log.e("", "Scrolling down 3 elements");
+                    }
+                } else {
+                    if (listView.canScrollList(-1)) {
+                        initScrollPos -= 3;
+                        Log.e("", "Scrolling up 3 elements");
+                    }
+                }
+                listView.smoothScrollToPositionFromTop(initScrollPos, 0, 100);
+            }
+            isReternedToOriginalPosition = false;
+        } else {
+            Log.e("", "Not scrolling");
+            isReternedToOriginalPosition = true;
         }
-
-        if (yDelta > old + threshold) {
-            Log.w("UP", "Detected change in pitch up...");
-            old = yDelta;
-            lv.smoothScrollToPosition(firstVisiblePosition - 4);
-        }
-
-        if (yDelta < init + threshold && yDelta > init - threshold) {
-            Log.w("SAME", "No change...");
-            //lv.smoothScrollToPosition(lv.getCount());
-        }
-
-        /*
-        else {
-            Log.e("ERROR", "ERROR...");
-            lv.smoothScrollToPosition(0);
-        } */
 
     }
 
