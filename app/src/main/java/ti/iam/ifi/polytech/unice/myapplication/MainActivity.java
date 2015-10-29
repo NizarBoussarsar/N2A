@@ -1,20 +1,18 @@
 package ti.iam.ifi.polytech.unice.myapplication;
 
-import android.app.ListActivity;
+import android.app.Activity;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.ListView;
+import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener {
+public class MainActivity extends Activity implements SensorEventListener {
 
-    public static int[] images = {
+    Integer[] images = {
             R.drawable.image1,
             R.drawable.image5,
             R.drawable.image2,
@@ -33,7 +31,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             R.drawable.image8
     };
 
+    Integer[] imagesIds;
+
     private ListView listView;
+    private TextView textView;
 
     private SensorManager sensorManager;
     private Sensor sensor;
@@ -47,8 +48,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        imagesIds = new Integer[images.length];
+
+        for (int i = 0; i < images.length; i++) {
+            imagesIds[i] = i;
+        }
+
         listView = (ListView) findViewById(R.id.listView);
-        listView.setAdapter(new CustomAdapter(this, images));
+        listView.setAdapter(new CustomAdapter(this, imagesIds, images));
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -68,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
 
+    /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -89,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         return super.onOptionsItemSelected(item);
     }
+    */
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -113,16 +122,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                      *            scrolling down.
                      */
                     if (listView.canScrollList(1)) {
+                        //Log.e("", "Scrolling down " + (listView.getLastVisiblePosition() - initScrollPos) + "  elements");
+                        //initScrollPos += listView.getLastVisiblePosition();
                         initScrollPos += 3;
                         Log.e("", "Scrolling down 3 elements");
                     }
                 } else {
                     if (listView.canScrollList(-1)) {
+                        //Log.e("", "Scrolling up " + (listView.getLastVisiblePosition() - initScrollPos) + "  elements");
+                        //initScrollPos -= listView.getFirstVisiblePosition();
                         initScrollPos -= 3;
                         Log.e("", "Scrolling up 3 elements");
                     }
                 }
                 listView.smoothScrollToPositionFromTop(initScrollPos, 0, 100);
+                Log.e("", "initScrollPos " + initScrollPos);
             }
             isReternedToOriginalPosition = false;
         } else {
