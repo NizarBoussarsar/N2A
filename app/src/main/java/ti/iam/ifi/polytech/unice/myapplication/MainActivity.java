@@ -1,12 +1,13 @@
 package ti.iam.ifi.polytech.unice.myapplication;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
@@ -55,39 +56,64 @@ public class MainActivity extends Activity implements SensorEventListener {
     View.OnClickListener buttonHandler = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            //Il y a toujours un probléme avec ça ..
+            //http://stackoverflow.com/questions/29862577/how-to-check-whether-a-list-is-a-subset-of-another-list
+            //retainAll() n'est pas la bonne méthode
             if (adapter.selectedImages.retainAll(correctImages)) {
-                Toast.makeText(getApplicationContext(), "TRUE", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Good Job !", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(getApplicationContext(), "FALSE", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Try again please ..", Toast.LENGTH_SHORT).show();
             }
         }
     };
+
+    /*
+    private boolean isFirstTime() {
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        boolean ranBefore = preferences.getBoolean("RanBefore", false);
+        if (!ranBefore) {
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean("RanBefore", true);
+            editor.commit();
+        }
+        return !ranBefore;
+    }
+    */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /*
-        if (isFirstTime()) {
-            ShowcaseView showcaseView = new ShowcaseView.Builder(this)
-                    .setTarget(new ActionViewTarget(this, ActionViewTarget.Type.HOME))
-                    .setContentTitle("Instructions")
-                    .setContentText("This is highlighting the Home button")
-                    .hideOnTouchOutside()
-                    .build();
-        }
-        */
+        // BEGIN Alert - Instructions
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Instructions");
+        String instructions = "The goal of this game is to scoll over the pictures using the accelerometer.\n" +
+                "In order to achieve the goal, you have to select all the pictures that represents TUNISIA.\n" +
+                "Good luck with it !";
+        builder.setMessage(instructions);
+        builder.setPositiveButton("Okay", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        AlertDialog alert = builder.create();
+        alert.show();
+        // END Alert - Instructions
 
-        imagesIds = new Integer[images.length];
-
+        // BEGIN Choice of correct images
+        // J'ai juste fait un test : premiére et derniére
         correctImages = new ArrayList<>();
         correctImages.add(images[0]);
         correctImages.add(images[images.length - 1]);
+        // END Choice of correct images
 
+        // BEGIN Créations de ids correspendant aux images pour les passer au listView
+        imagesIds = new Integer[images.length];
         for (int i = 0; i < images.length; i++) {
             imagesIds[i] = i;
         }
+        // END Créations de ids correspendant aux images pour les passer au listView
 
         adapter = new CustomAdapter(this, imagesIds, images);
 
@@ -103,29 +129,10 @@ public class MainActivity extends Activity implements SensorEventListener {
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
-    /*
-    private boolean isFirstTime() {
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        boolean ranBefore = preferences.getBoolean("RanBefore", false);
-        if (!ranBefore) {
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putBoolean("RanBefore", true);
-            editor.commit();
-        }
-        return !ranBefore;
-    }
-    */
-    
     @Override
     protected void onPause() {
         super.onPause();
         sensorManager.unregisterListener(this);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
     }
 
 
@@ -154,6 +161,12 @@ public class MainActivity extends Activity implements SensorEventListener {
     */
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
+    }
+
+    @Override
     public void onSensorChanged(SensorEvent event) {
         Sensor mySensor = event.sensor;
         float difference, last_y = event.values[1];
@@ -166,8 +179,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         difference = Math.abs(initialY - last_y);
 
-        Log.e("", "Initial position : " + initialY + ". Difference : " + difference);
-
         if (difference > yThreshold) {
             if (isReternedToOriginalPosition) {
                 if (initialY - last_y > 0) {
@@ -176,33 +187,27 @@ public class MainActivity extends Activity implements SensorEventListener {
                      *            scrolling down.
                      */
                     if (listView.canScrollList(1)) {
-                        //Log.e("", "Scrolling down " + (listView.getLastVisiblePosition() - initScrollPos) + "  elements");
                         //initScrollPos += listView.getLastVisiblePosition();
                         initScrollPos += 3;
-                        Log.e("", "Scrolling down 3 elements");
                     }
                 } else {
                     if (listView.canScrollList(-1)) {
-                        //Log.e("", "Scrolling up " + (listView.getLastVisiblePosition() - initScrollPos) + "  elements");
                         //initScrollPos -= listView.getFirstVisiblePosition();
                         initScrollPos -= 3;
-                        Log.e("", "Scrolling up 3 elements");
                     }
                 }
                 listView.smoothScrollToPositionFromTop(initScrollPos, 0, 100);
-                Log.e("", "initScrollPos " + initScrollPos);
             }
             isReternedToOriginalPosition = false;
         } else {
-            Log.e("", "Not scrolling");
             isReternedToOriginalPosition = true;
         }
-
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
+
 
 }
