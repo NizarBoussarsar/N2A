@@ -2,12 +2,12 @@ package ti.iam.ifi.polytech.unice.myapplication;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,12 +23,15 @@ public class CustomAdapter extends ArrayAdapter<Integer> {
 
     public CustomAdapter(Activity context, Integer[] ids, Integer[] imgs) {
         super(context, R.layout.image_list_view, ids);
+
+        Log.e("nbelem", "construction de Customadapter: ");
+
         this.context = context;
         this.ids = ids;
         this.imgs = imgs;
 
         states = new boolean[ids.length];
-        selectedImages = new ArrayList<>();
+        selectedImages = new ArrayList<Integer>();
     }
 
     @Override
@@ -43,17 +46,13 @@ public class CustomAdapter extends ArrayAdapter<Integer> {
         final View rowView = inflater.inflate(R.layout.image_list_view, null, true);
         if (states[position]) rowView.setBackgroundColor(Color.GREEN);
 
-
         ImageView imageView = (ImageView) rowView.findViewById(R.id.imageView1);
-        TextView textView = (TextView) rowView.findViewById(R.id.textView);
 
-        textView.setText("Number " + ids[position]);
         imageView.setImageResource(imgs[position]);
 
-        rowView.setOnLongClickListener(new View.OnLongClickListener() {
+        rowView.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
-
+            public void onClick(View v) {
                 if (!selectedImages.contains(ids[position])) {
                     selectedImages.add(ids[position]);
                     rowView.setBackgroundColor(Color.GREEN);
@@ -65,8 +64,6 @@ public class CustomAdapter extends ArrayAdapter<Integer> {
                     states[position] = false;
                     rowView.invalidate();
                 }
-
-                return false;
             }
         });
 
